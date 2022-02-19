@@ -23,6 +23,9 @@
     - include_role:
         name: ssh_settings
 
+    - name: Reset SSH Connection
+      meta: reset_connection
+
     - name: Gathering facts
       setup:
 
