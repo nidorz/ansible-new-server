@@ -1,0 +1,15 @@
+---
+# tasks file for ssh_port_change
+#
+
+- name: Change SSH-port to one provided in the ansible_port variable
+  become: true
+  lineinfile:
+    dest: "/etc/ssh/sshd_config"
+    regexp: "^#Port"
+    line: "Port {{ configured_port }}"
+
+  notify: "restart sshd"
+
+- name: Ensure SSH is reloaded by flushing handlers
+  meta: flush_handlers

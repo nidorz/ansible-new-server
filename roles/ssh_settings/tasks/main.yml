@@ -1,0 +1,33 @@
+---
+# tasks file for ssh_settings
+#
+
+- name: Disallow remote root login for SSH
+  become: true
+  lineinfile:
+    dest: "/etc/ssh/sshd_config"
+    regexp: "^#PermitRootLogin"
+    line: "PermitRootLogin no"
+  
+  notify: "restart sshd"
+
+- name: Enable Public key authentication
+  become: true
+  lineinfile:
+    dest: "/etc/ssh/sshd_config"
+    regexp: "^#PubkeyAuthentication yes"
+    line: "PubkeyAuthentication yes"
+
+  notify: "restart sshd"
+
+- name: Disable passwordauthentication
+  become: true
+  lineinfile:
+    dest: "/etc/ssh/sshd_config"
+    regexp: "^#PasswordAuthentication yes"
+    line: "PasswordAuthentication no"
+
+  notify: "restart sshd"
+
+- name: Ensure SSH is reloaded by flushing handlers
+  meta: flush_handlers

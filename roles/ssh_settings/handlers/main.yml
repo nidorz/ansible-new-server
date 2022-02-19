@@ -1,0 +1,7 @@
+---
+# handlers file for ssh_port_change
+#
+- name: restart sshd
+  service:
+    name: sshd
+    state: restarted

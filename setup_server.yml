@@ -1,0 +1,59 @@
+---
+- hosts: all
+  gather_facts: no
+
+  become: yes
+
+  vars_files:
+    - 'vars/vars.yml'
+  vars:
+    ansible_become_pass: "{{ ansible_sudo_pass }}"
+
+  tasks:
+    - include_role:
+        name: ssh_check
+      vars:
+        ansible_port_in: "{{ ansible_port_set }}"
+
+    - include_role:
+        name: ssh_port_change
+      vars:
+          configured_port: "{{ ansible_port_set }}"
+
+    - include_role:
+        name: ssh_settings
+
+    - name: Gathering facts
+      setup:
+
+    - name: Update Repos and Upgrade
+      become: true
+      apt: update_cache=yes upgrade=yes
+
+    - include_role:
+        name: time_settings
+      vars:
+        - var_dict: {
+                    'locale_choice' : '{{ locale }}',
+                    'timezone_choice' : '{{ timezone }}'
+                     }
+
+
+    - name: Add ansible_user to sudo
+      become: true
+      shell: usermod -aG sudo '{{ ansible_user }}'
+
+    - name: Change to passwordless sudo
+      become: true
+      lineinfile:
+        dest: "/etc/sudoers"
+        regexp: "%sudo ALL=(ALL:ALL) ALL"
+        line: "%sudo ALL=(ALL:ALL) NOPASSWD:ALL"
+
+    - name: Install qemu-guest-agent
+      apt: name=qemu-guest-agent state=latest
+
+    - name: Reboot all servers
+      become: true
+      reboot:
+        reboot_timeout: 300

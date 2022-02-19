@@ -1,0 +1,25 @@
+---
+# tasks file for time_settings
+
+- name: Ensure systemd-timesyncd is installed
+  apt: name=systemd-timesyncd state=latest
+
+- name: Set timezone Europe/Oslo
+  shell: timedatectl set-timezone {{ var_dict.timezone_choice }}
+
+- name: Stop timesyncd
+  systemd:
+    name: systemd-timesyncd.service
+    state: stopped
+
+- name: Copy timesyncd config
+  template: src=../templates/timesyncd.conf dest=/etc/systemd/timesyncd.conf
+
+- name: Start timesyncd
+  systemd:
+    name: systemd-timesyncd.service
+    state: started
+
+- name: Set datetime format to 24hr
+  become: true
+  shell: localectl set-locale LC_TIME={{ var_dict.locale_choice }}

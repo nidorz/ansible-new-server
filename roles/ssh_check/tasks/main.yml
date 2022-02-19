@@ -1,0 +1,87 @@
+---
+# tasks file for ssh_check
+#
+
+- name: set ansible_port_in to ansible_port
+  set_fact:
+    ansible_port: "{{ ansible_port_in }}"
+
+  #- name: debug ansible_port
+  #debug: var=ansible_port
+
+
+- name: Set configured_port as a fact
+  set_fact:
+    configured_port: "{{ ansible_port_in }}"
+
+  #- name: print configured_port in debug
+  #debug: var=configured_port
+
+
+- name: Check if the server is using the default SSH port of 22
+  wait_for:
+    port: "22"
+    state: "started"
+    host: "{{ inventory_hostname }}"
+    connect_timeout: "5"
+    timeout: "10"
+  delegate_to: "localhost"
+  ignore_errors: "yes"
+  register: default_ssh
+
+
+  #- name: Print out default_ssh debug info
+  #debug: var=default_ssh
+
+
+- name: Set inventory variable ansible_port to default 22 
+  set_fact:
+    ansible_port: "22"
+  when: default_ssh.failed == false
+  register: ssh_port_set
+
+
+  #- name: debug ansible_port
+  #debug: var=ansible_port
+
+
+- name: Check if the server is using the inventory provided SSH port
+  wait_for:
+    port: "{{ ansible_port }}"
+    state: "started"
+    host: "{{ inventory_hostname }}"
+    connect_timeout: "5"
+    timeout: "10"
+  delegate_to: "localhost"
+  ignore_errors: "yes"
+  register: configured_ssh
+  when: default_ssh is defined and
+        default_ssh.failed == true
+
+
+  #- name: Debug configured_ssh
+  #debug: var=configured_ssh
+
+- name: SSH Port is configured properly
+  debug:
+    msg: "SSH is configured properly"
+  when: configured_ssh is defined and
+        configured_ssh.state is defined and
+        configured_ssh.state == "started"
+  register: ssh_port_set
+
+  #- name: debug ssh_port_set
+  #debug: var=ssh_port_set
+
+  #- name: debug ansible_port
+  #debug: var=ansible_port
+
+- name: Fail if SSH port is neither 22 or the specified port
+  fail:
+    msg: "The SSH port is neither 22 or {{ ansible_port }}"
+  when: ssh_port_set is undefined
+
+
+- name: Confirm host connection works with a ping
+  ping:
+
